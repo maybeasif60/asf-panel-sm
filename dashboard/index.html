@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASF</title>
+
+  <!-- ✅ Favicon -->
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="logo.png" alt="Logo">
+        <h2>ASF</h2>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="dashboard.html" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+          <li><a href="../dashboard/collection/"><i class="fas fa-layer-group"></i> Collection</a></li>
+          <li><a href="../dashboard/link/"><i class="fas fa-link"></i> Link</a></li>
+          <li><a href="../dashboard/user-management/"><i class="fas fa-users"></i> User Management</a></li>
+          <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <h1>Welcome, <span id="userName"></span>!</h1>
+      <div class="cards">
+        <div class="card">
+          <h3>HOW ARE YOU?</h3>
+          <p>0</p>
+        </div>
+        <div class="card">
+          <h3>Orders</h3>
+          <p>23</p>
+        </div>
+        <div class="card">
+          <h3>Revenue</h3>
+          <p>$12,450</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { logout } from "../firebase/auth.js";
+    window.logout = logout;
+  </script>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
