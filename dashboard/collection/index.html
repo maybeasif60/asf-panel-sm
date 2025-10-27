@@ -55,20 +55,64 @@
   </main>
 </div>
 
+<!-- Delete Confirmation Popup -->
+<div id="delete-popup" style="
+  display:none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border: 2px solid #1a73e8;
+  border-radius: 12px;
+  padding: 25px 30px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  z-index: 9999;
+  text-align: center;
+  font-family: Arial, sans-serif;
+">
+  <p id="delete-popup-text" style="font-size:16px; margin-bottom:20px;">
+    ⚠️ Do you really want to delete this entry?
+  </p>
+  <button id="confirm-delete" style="
+    background:#1a73e8;color:white;border:none;padding:10px 20px;border-radius:6px;margin-right:10px;cursor:pointer;
+  ">Yes</button>
+  <button id="cancel-delete" style="
+    background:#ccc;color:#202124;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;
+  ">Cancel</button>
+</div>
+
+<!-- Success Notification -->
+<div id="success-notification" style="
+  display:none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background:#1a73e8;
+  color:white;
+  padding: 20px 25px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  z-index: 9999;
+  font-family: Arial, sans-serif;
+  font-size:16px;
+  text-align:center;
+"></div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyArUMHWhrM-g0m0-kXTu_EWmGACetQvLlc",
-  authDomain: "asf-panel-sm.firebaseapp.com",
-  projectId: "asf-panel-sm",
-  storageBucket: "asf-panel-sm.firebasestorage.app",
-  messagingSenderId: "444535178333",
-  appId: "1:444535178333:web:da733a6f819a0c4529f9b4",
-  measurementId: "G-BSFWL4LLY5"
+    apiKey: "AIzaSyBEKuc4mzaWI5I6R9QgAeDHMz13bKk5Oy4",
+    authDomain: "asf-panel-azizul.firebaseapp.com",
+    projectId: "asf-panel-azizul",
+    storageBucket: "asf-panel-azizul.firebasestorage.app",
+    messagingSenderId: "444571143429",
+    appId: "1:444571143429:web:a435815af2bbd7c2d0bb6c",
+    measurementId: "G-79PTWV1GY4"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -93,7 +137,6 @@ onValue(requestsRef, (snapshot) => {
   keys.forEach(key => {
     const request = data[key];
 
-    // Timestamp formatting
     let formattedTime = "N/A";
     if (request.timestamp) {
       const date = new Date(request.timestamp);
@@ -113,18 +156,41 @@ onValue(requestsRef, (snapshot) => {
   });
 });
 
-// Logout function
-window.logout = () => 
-  alert("Logout functionality here!");
-
-// Delete Request
-window.deleteRequest = function(key){
-  if(confirm("Are you sure you want to delete this request?")){
-    remove(ref(db, `joinRequests/${key}`))
-      .then(()=> alert("Request deleted successfully"))
-      .catch(err => alert("Error: "+err.message));
-  }
+// Notification helper
+function showNotification(message){
+  const notif = document.getElementById("success-notification");
+  notif.textContent = message;
+  notif.style.display = "block";
+  setTimeout(()=> { notif.style.display = "none"; }, 2500);
 }
+
+// Delete Request Popup logic
+let deleteKey = null;
+
+window.deleteRequest = function(key){
+  deleteKey = key;
+  document.getElementById("delete-popup").style.display = "block";
+};
+
+document.getElementById("confirm-delete").addEventListener("click", () => {
+  if(deleteKey){
+    remove(ref(db, `joinRequests/${deleteKey}`))
+      .then(()=> {
+        showNotification("✅ Request deleted successfully!");
+        document.getElementById("delete-popup").style.display = "none";
+        deleteKey = null;
+      })
+      .catch(err => showNotification("❌ Error: "+err.message));
+  }
+});
+
+document.getElementById("cancel-delete").addEventListener("click", () => {
+  document.getElementById("delete-popup").style.display = "none";
+  deleteKey = null;
+});
+
+// Logout function
+window.logout = () => alert("Logout functionality here!");
 </script>
 </body>
 </html>
