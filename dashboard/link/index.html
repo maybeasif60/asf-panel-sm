@@ -5,13 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Website Links</title>
 
-  <!-- Favicon -->
+  <!-- ✅ Favicon -->
   <link rel="icon" type="image/png" href="../logo.png">
   <link rel="apple-touch-icon" href="../logo.png">
 
-  <!-- Font Awesome Icons -->
+  <!-- ✅ Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -55,18 +54,19 @@
     </main>
   </div>
 
+  <!-- ✅ Embed Firebase JS & Add Delete Confirmation -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
+    // Firebase config
     const firebaseConfig = {
-      apiKey: "AIzaSyArUMHWhrM-g0m0-kXTu_EWmGACetQvLlc",
-      authDomain: "asf-panel-sm.firebaseapp.com",
-      projectId: "asf-panel-sm",
-      storageBucket: "asf-panel-sm.firebasestorage.app",
-      messagingSenderId: "444535178333",
-      appId: "1:444535178333:web:da733a6f819a0c4529f9b4",
-      measurementId: "G-BSFWL4LLY5"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_BUCKET",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -75,18 +75,17 @@
     const linkNameInput = document.getElementById("linkName");
     const linkURLInput = document.getElementById("linkURL");
     const addBtn = document.getElementById("addBtn");
-    const linkTableBody = document.querySelector("#linkTable tbody");
+    const tableBody = document.querySelector("#linkTable tbody");
+
+    const linksRef = ref(db, "websiteLinks");
 
     // Add new link
     addBtn.addEventListener("click", () => {
       const name = linkNameInput.value.trim();
       const url = linkURLInput.value.trim();
-      if (!name || !url) {
-        alert("Please enter both Link Name and URL");
-        return;
-      }
-      const linkId = Date.now(); // unique ID
-      set(ref(db, `websiteLinks/${linkId}`), { name, url })
+      if (!name || !url) return alert("Both fields are required!");
+
+      push(linksRef, { name, url })
         .then(() => {
           linkNameInput.value = "";
           linkURLInput.value = "";
@@ -94,30 +93,32 @@
         .catch(err => alert("Error: " + err.message));
     });
 
-    // Load links
-    onValue(ref(db, "websiteLinks"), (snapshot) => {
+    // Render links
+    onValue(linksRef, (snapshot) => {
       const data = snapshot.val();
-      linkTableBody.innerHTML = "";
+      tableBody.innerHTML = "";
+
       if (!data) return;
 
       Object.keys(data).forEach(key => {
         const link = data[key];
-        const row = document.createElement("tr");
-        row.innerHTML = `
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
           <td>${link.name}</td>
           <td><a href="${link.url}" target="_blank">${link.url}</a></td>
           <td><button class="deleteBtn">Delete</button></td>
         `;
 
         // Delete with confirmation
-        row.querySelector(".deleteBtn").addEventListener("click", () => {
+        tr.querySelector(".deleteBtn").addEventListener("click", () => {
           if (confirm(`Are you sure you want to delete "${link.name}"?`)) {
             remove(ref(db, `websiteLinks/${key}`))
               .catch(err => alert("Error: " + err.message));
           }
         });
 
-        linkTableBody.appendChild(row);
+        tableBody.appendChild(tr);
       });
     });
   </script>
