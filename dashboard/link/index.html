@@ -1,66 +1,125 @@
-// link.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Website Links</title>
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyArUMHWhrM-g0m0-kXTu_EWmGACetQvLlc",
-  authDomain: "asf-panel-sm.firebaseapp.com",
-  projectId: "asf-panel-sm",
-  storageBucket: "asf-panel-sm.firebasestorage.app",
-  messagingSenderId: "444535178333",
-  appId: "1:444535178333:web:da733a6f819a0c4529f9b4",
-  measurementId: "G-BSFWL4LLY5"
-};
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="../logo.png">
+  <link rel="apple-touch-icon" href="../logo.png">
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-const linkNameInput = document.getElementById("linkName");
-const linkURLInput = document.getElementById("linkURL");
-const addBtn = document.getElementById("addBtn");
-const linkTableBody = document.querySelector("#linkTable tbody");
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="../logo.png" alt="Logo" />
+        <h2>ASF</h2>
+      </div>
 
-// Add new link
-addBtn.addEventListener("click", () => {
-  const name = linkNameInput.value.trim();
-  const url = linkURLInput.value.trim();
-  if(!name || !url){
-    alert("Please enter both Link Name and URL");
-    return;
-  }
-  const linkId = Date.now(); // simple unique ID
-  set(ref(db, `websiteLinks/${linkId}`), { name, url })
-    .then(() => {
-      linkNameInput.value = "";
-      linkURLInput.value = "";
-    })
-    .catch(err => alert("Error: " + err.message));
-});
+      <nav>
+        <ul>
+          <li><a href="/dashboard/"><i class="fas fa-home"></i> Dashboard</a></li>
+          <li><a href="../collection/"><i class="fas fa-layer-group"></i> Collection</a></li>
+          <li><a href="/dashboard/link/" class="active"><i class="fas fa-link"></i> Links</a></li>
+          <li><a href="../user-management/"><i class="fas fa-users"></i> User Management</a></li>
+          <li><a href="/login/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      </nav>
+    </aside>
 
-// Load links
-onValue(ref(db, "websiteLinks"), (snapshot) => {
-  const data = snapshot.val();
-  linkTableBody.innerHTML = "";
-  if(!data) return;
+    <main class="main-content">
+      <h1>Manage Website Links</h1>
 
-  Object.keys(data).forEach(key => {
-    const link = data[key];
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${link.name}</td>
-      <td><a href="${link.url}" target="_blank">${link.url}</a></td>
-      <td><button class="deleteBtn">Delete</button></td>
-    `;
+      <div class="add-link">
+        <input type="text" id="linkName" placeholder="Enter Link Name" />
+        <input type="text" id="linkURL" placeholder="Enter Link URL" />
+        <button id="addBtn">Add Link</button>
+      </div>
 
-    // Delete with confirmation
-    row.querySelector(".deleteBtn").addEventListener("click", () => {
-      if(confirm(`Are you sure you want to delete "${link.name}"?`)){
-        remove(ref(db, `websiteLinks/${key}`))
-          .catch(err => alert("Error: " + err.message));
+      <table id="linkTable">
+        <thead>
+          <tr>
+            <th>Link Name</th>
+            <th>URL</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyArUMHWhrM-g0m0-kXTu_EWmGACetQvLlc",
+      authDomain: "asf-panel-sm.firebaseapp.com",
+      projectId: "asf-panel-sm",
+      storageBucket: "asf-panel-sm.firebasestorage.app",
+      messagingSenderId: "444535178333",
+      appId: "1:444535178333:web:da733a6f819a0c4529f9b4",
+      measurementId: "G-BSFWL4LLY5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const linkNameInput = document.getElementById("linkName");
+    const linkURLInput = document.getElementById("linkURL");
+    const addBtn = document.getElementById("addBtn");
+    const linkTableBody = document.querySelector("#linkTable tbody");
+
+    // Add new link
+    addBtn.addEventListener("click", () => {
+      const name = linkNameInput.value.trim();
+      const url = linkURLInput.value.trim();
+      if (!name || !url) {
+        alert("Please enter both Link Name and URL");
+        return;
       }
+      const linkId = Date.now(); // unique ID
+      set(ref(db, `websiteLinks/${linkId}`), { name, url })
+        .then(() => {
+          linkNameInput.value = "";
+          linkURLInput.value = "";
+        })
+        .catch(err => alert("Error: " + err.message));
     });
 
-    linkTableBody.appendChild(row);
-  });
-});
+    // Load links
+    onValue(ref(db, "websiteLinks"), (snapshot) => {
+      const data = snapshot.val();
+      linkTableBody.innerHTML = "";
+      if (!data) return;
+
+      Object.keys(data).forEach(key => {
+        const link = data[key];
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${link.name}</td>
+          <td><a href="${link.url}" target="_blank">${link.url}</a></td>
+          <td><button class="deleteBtn">Delete</button></td>
+        `;
+
+        // Delete with confirmation
+        row.querySelector(".deleteBtn").addEventListener("click", () => {
+          if (confirm(`Are you sure you want to delete "${link.name}"?`)) {
+            remove(ref(db, `websiteLinks/${key}`))
+              .catch(err => alert("Error: " + err.message));
+          }
+        });
+
+        linkTableBody.appendChild(row);
+      });
+    });
+  </script>
+</body>
+</html>
