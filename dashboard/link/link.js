@@ -29,11 +29,11 @@ onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = "../login/login.html";
 });
 
-// Modern popup function
+// -------------------- Modern Popup --------------------
 function showPopup(message, type = "success") {
   const popup = document.createElement("div");
   popup.className = `popup-notification ${type}`;
-  popup.textContent = message;
+  popup.innerHTML = message;
 
   Object.assign(popup.style, {
     position: "fixed",
@@ -48,10 +48,12 @@ function showPopup(message, type = "success") {
     fontFamily: "Poppins, sans-serif",
     fontSize: "14px",
     opacity: 0,
+    transform: "translateY(-20px)",
     transition: "opacity 0.3s, transform 0.3s",
   });
 
   document.body.appendChild(popup);
+
   setTimeout(() => {
     popup.style.opacity = 1;
     popup.style.transform = "translateY(0)";
@@ -64,7 +66,53 @@ function showPopup(message, type = "success") {
   }, 2500);
 }
 
-// Add link
+// -------------------- Confirmation Modal --------------------
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+
+    const modal = document.createElement("div");
+    modal.style.cssText = `
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      font-family: Poppins, sans-serif;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    `;
+
+    modal.innerHTML = `
+      <p style="margin-bottom: 20px; font-size:16px;">${message}</p>
+      <button id="confirmYes" style="padding:8px 16px;margin-right:10px;background:#4caf50;color:#fff;border:none;border-radius:5px;cursor:pointer;">Yes</button>
+      <button id="confirmNo" style="padding:8px 16px;background:#f44336;color:#fff;border:none;border-radius:5px;cursor:pointer;">No</button>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    document.getElementById("confirmYes").onclick = () => {
+      overlay.remove();
+      resolve(true);
+    };
+    document.getElementById("confirmNo").onclick = () => {
+      overlay.remove();
+      resolve(false);
+    };
+  });
+}
+
+// -------------------- Add Link --------------------
 addBtn.addEventListener("click", async () => {
   const name = linkNameInput.value.trim();
   let url = linkURLInput.value.trim();
@@ -81,7 +129,7 @@ addBtn.addEventListener("click", async () => {
   showPopup("Link added successfully!");
 });
 
-// Display links and delete
+// -------------------- Display Links and Delete --------------------
 onValue(ref(db, "links"), (snapshot) => {
   linkTable.innerHTML = "";
   snapshot.forEach((child) => {
@@ -96,12 +144,11 @@ onValue(ref(db, "links"), (snapshot) => {
     linkTable.appendChild(row);
   });
 
-  // Delete button with confirmation
   document.querySelectorAll(".delete").forEach(btn => {
     btn.onclick = async () => {
       const id = btn.dataset.id;
-      const confirmDelete = confirm("Are you sure you want to delete this link?");
-      if (!confirmDelete) return;
+      const confirmed = await showConfirm("Are you sure you want to delete this link?");
+      if (!confirmed) return;
 
       await remove(ref(db, `links/${id}`));
       showPopup("Link deleted successfully!", "success");
@@ -109,7 +156,7 @@ onValue(ref(db, "links"), (snapshot) => {
   });
 });
 
-// Logout
+// -------------------- Logout --------------------
 logoutBtn.addEventListener("click", async () => {
   await signOut(auth);
   window.location.href = "../login/";
