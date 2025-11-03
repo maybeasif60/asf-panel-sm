@@ -5,17 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Collection</title>
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="../logo.png">
   <link rel="apple-touch-icon" href="../logo.png">
 
-  <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-
   <link rel="stylesheet" href="collection.css">
+
+  <style>
+    /* Popup alert */
+    .popup-alert {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #222;
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.4s ease, fadeOut 0.4s ease 3.5s forwards;
+      z-index: 9999;
+    }
+    .popup-alert i { color: #4CAF50; font-size: 1.3rem; }
+    @keyframes slideIn { from {opacity:0; transform:translateX(100%);} to{opacity:1; transform:translateX(0);} }
+    @keyframes fadeOut { to{opacity:0; transform:translateX(120%);} }
+  </style>
 </head>
 <body>
-  
+
 <script type="module">
   import { logout } from "../firebase/auth.js";
   window.logout = logout;
@@ -55,54 +75,12 @@
   </main>
 </div>
 
-<!-- Delete Confirmation Popup -->
-<div id="delete-popup" style="
-  display:none;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  border: 2px solid #1a73e8;
-  border-radius: 12px;
-  padding: 25px 30px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  z-index: 9999;
-  text-align: center;
-  font-family: Arial, sans-serif;
-">
-  <p id="delete-popup-text" style="font-size:16px; margin-bottom:20px;">
-    ⚠️ Do you really want to delete this entry?
-  </p>
-  <button id="confirm-delete" style="
-    background:#1a73e8;color:white;border:none;padding:10px 20px;border-radius:6px;margin-right:10px;cursor:pointer;
-  ">Yes</button>
-  <button id="cancel-delete" style="
-    background:#ccc;color:#202124;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;
-  ">Cancel</button>
-</div>
-
-<!-- Success Notification -->
-<div id="success-notification" style="
-  display:none;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background:#1a73e8;
-  color:white;
-  padding: 20px 25px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  z-index: 9999;
-  font-family: Arial, sans-serif;
-  font-size:16px;
-  text-align:center;
-"></div>
+<!-- 🔊 Notification Sound -->
+<audio id="notifySound" src="notify.mp3" preload="auto"></audio>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+import { getDatabase, ref, onValue, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyArUMHWhrM-g0m0-kXTu_EWmGACetQvLlc",
@@ -114,21 +92,25 @@ const firebaseConfig = {
   measurementId: "G-BSFWL4LLY5"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const tableBody = document.querySelector("#collectionTable tbody");
 const notifications = document.getElementById("notifications");
+const notifySound = document.getElementById("notifySound");
 
 const requestsRef = ref(db, 'joinRequests');
 
+let isInitialLoad = true;
+
+// Full list update
 onValue(requestsRef, (snapshot) => {
   const data = snapshot.val();
   tableBody.innerHTML = '';
 
   if (!data) {
     notifications.innerHTML = `<p>No requests found</p>`;
+    isInitialLoad = false;
     return;
   }
 
@@ -137,11 +119,10 @@ onValue(requestsRef, (snapshot) => {
 
   keys.forEach(key => {
     const request = data[key];
-
     let formattedTime = "N/A";
     if (request.timestamp) {
-      const date = new Date(request.timestamp);
-      formattedTime = date.toLocaleString("en-GB", { timeZone: "Asia/Dhaka" });
+      formattedTime = new Date(request.timestamp)
+                        .toLocaleString("en-GB", { timeZone:"Asia/Dhaka" });
     }
 
     tableBody.innerHTML += `
@@ -155,44 +136,41 @@ onValue(requestsRef, (snapshot) => {
       </tr>
     `;
   });
+
+  // Full load finished → ignore previous children
+  setTimeout(()=> { isInitialLoad = false; }, 100);
 });
 
-// Notification helper
-function showNotification(message){
-  const notif = document.getElementById("success-notification");
-  notif.textContent = message;
-  notif.style.display = "block";
-  setTimeout(()=> { notif.style.display = "none"; }, 2500);
-}
+// New user added → only notify sound
+onChildAdded(requestsRef, (snapshot) => {
+  if (isInitialLoad) return; // ignore existing data / page load / redirect
+  const request = snapshot.val();
+  if(!request) return;
 
-// Delete Request Popup logic
-let deleteKey = null;
+  try { notifySound.play(); } catch(e){ console.warn("Autoplay blocked."); }
 
-window.deleteRequest = function(key){
-  deleteKey = key;
-  document.getElementById("delete-popup").style.display = "block";
-};
-
-document.getElementById("confirm-delete").addEventListener("click", () => {
-  if(deleteKey){
-    remove(ref(db, `joinRequests/${deleteKey}`))
-      .then(()=> {
-        showNotification("✅ Request deleted successfully!");
-        document.getElementById("delete-popup").style.display = "none";
-        deleteKey = null;
-      })
-      .catch(err => showNotification("❌ Error: "+err.message));
+  if(Notification.permission === "granted"){
+    new Notification("New request received!", {
+      body: `Email: ${request.email || "Unknown user"}`,
+      icon: "../logo.png"
+    });
   }
+
+  const popup = document.createElement("div");
+  popup.className = "popup-alert";
+  popup.innerHTML = `<i class="fas fa-bell"></i> New request from <b>${request.email || "Unknown"}</b>`;
+  document.body.appendChild(popup);
+  setTimeout(()=>popup.remove(),4000);
 });
 
-document.getElementById("cancel-delete").addEventListener("click", () => {
-  document.getElementById("delete-popup").style.display = "none";
-  deleteKey = null;
-});
-
-// Logout function
-window.logout = () => alert("Logout functionality here!");
+// Delete request
+window.deleteRequest = function(key){
+  if(confirm("Are you sure you want to delete this request?")){
+    remove(ref(db, `joinRequests/${key}`))
+      .then(()=> alert("Request deleted successfully"))
+      .catch(err => alert("Error: "+err.message));
+  }
+}
 </script>
 </body>
 </html>
-
