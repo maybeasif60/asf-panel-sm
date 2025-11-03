@@ -1,73 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Collection</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collection</title>
 
-  <link rel="icon" type="image/png" href="../logo.png">
-  <link rel="apple-touch-icon" href="../logo.png">
+<link rel="icon" type="image/png" href="../logo.png">
+<link rel="apple-touch-icon" href="../logo.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="collection.css">
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <link rel="stylesheet" href="collection.css">
+<style>
+/* ---------------- New Request Popup ---------------- */
+.popup-alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #1e1e2f;
+  color: #fff;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  font-family: "Poppins", sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideIn 0.4s ease, fadeOut 0.4s ease 3.5s forwards;
+  z-index: 9999;
+}
+.popup-alert i {
+  color: #4CAF50;
+  font-size: 1.4rem;
+}
+@keyframes slideIn { from {opacity:0; transform:translateX(120%);} to{opacity:1; transform:translateX(0);} }
+@keyframes fadeOut { to{opacity:0; transform:translateX(140%);} }
 
-  <style>
-    /* Popup alert */
-    .popup-alert {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #222;
-      color: #fff;
-      padding: 14px 18px;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      font-family: "Poppins", sans-serif;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      animation: slideIn 0.4s ease, fadeOut 0.4s ease 3.5s forwards;
-      z-index: 9999;
-    }
-    .popup-alert i { color: #4CAF50; font-size: 1.3rem; }
-    @keyframes slideIn { from {opacity:0; transform:translateX(100%);} to{opacity:1; transform:translateX(0);} }
-    @keyframes fadeOut { to{opacity:0; transform:translateX(120%);} }
-
-    /* Custom delete confirmation popup */
-    .delete-popup {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #e74c3c;
-      color: white;
-      padding: 20px 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-      font-family: "Poppins", sans-serif;
-    }
-    .delete-popup button {
-      padding: 6px 14px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .confirm-btn { background: #27ae60; color: white; }
-    .cancel-btn { background: #95a5a6; color: white; }
-    .delete-popup div { display: flex; gap: 10px; }
-  </style>
+/* ---------------- Delete Confirmation Popup ---------------- */
+.delete-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  color: #333;
+  padding: 25px 30px;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  font-family: "Poppins", sans-serif;
+  width: 300px;
+  text-align: center;
+}
+.delete-popup span {
+  font-size: 1rem;
+  font-weight: 500;
+}
+.delete-popup div {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  justify-content: center;
+}
+.delete-popup button {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.delete-popup .confirm-btn { background: #27ae60; color: white; }
+.delete-popup .confirm-btn:hover { background: #2ecc71; }
+.delete-popup .cancel-btn { background: #e74c3c; color: white; }
+.delete-popup .cancel-btn:hover { background: #ff4c4c; }
+</style>
 </head>
 <body>
 
 <script type="module">
-  import { logout } from "../firebase/auth.js";
-  window.logout = logout;
+import { logout } from "../firebase/auth.js";
+window.logout = logout;
 </script>
 
 <div class="dashboard-container">
@@ -104,7 +121,7 @@
   </main>
 </div>
 
-<!-- 🔊 Notification Sound -->
+<!-- Notification Sound -->
 <audio id="notifySound" src="notify.mp3" preload="auto"></audio>
 
 <script type="module">
@@ -129,7 +146,6 @@ const notifications = document.getElementById("notifications");
 const notifySound = document.getElementById("notifySound");
 
 const requestsRef = ref(db, 'joinRequests');
-
 let isInitialLoad = true;
 
 // Full list update
@@ -166,13 +182,12 @@ onValue(requestsRef, (snapshot) => {
     `;
   });
 
-  // Full load finished → ignore previous children
   setTimeout(()=> { isInitialLoad = false; }, 100);
 });
 
-// New user added → only notify sound
+// New user added
 onChildAdded(requestsRef, (snapshot) => {
-  if (isInitialLoad) return; // ignore existing data / page load / redirect
+  if (isInitialLoad) return;
   const request = snapshot.val();
   if(!request) return;
 
@@ -192,7 +207,7 @@ onChildAdded(requestsRef, (snapshot) => {
   setTimeout(()=>popup.remove(),4000);
 });
 
-// Delete request with custom popup
+// Delete request with modern popup
 window.deleteRequest = function(key){
   const popup = document.createElement("div");
   popup.className = "delete-popup";
@@ -218,9 +233,7 @@ window.deleteRequest = function(key){
       .catch(err => alert("Error: "+err.message));
   };
 
-  popup.querySelector(".cancel-btn").onclick = () => {
-    popup.remove();
-  };
+  popup.querySelector(".cancel-btn").onclick = () => popup.remove();
 
   setTimeout(() => { if(document.body.contains(popup)) popup.remove(); }, 10000);
 };
