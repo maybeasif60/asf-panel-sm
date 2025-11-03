@@ -1,166 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title> Links</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Website Links</title>
 
-<link rel="icon" type="image/png" href="../logo.png">
-<link rel="apple-touch-icon" href="../logo.png">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<link rel="stylesheet" href="style.css" />
+  <!-- ✅ Favicon -->
+  <link rel="icon" type="image/png" href="../logo.png">
+  <link rel="apple-touch-icon" href="../logo.png">
 
-<style>
-  /* Delete confirmation popup */
-  .delete-popup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff;
-    color: #222;
-    border-radius: 10px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-    padding: 25px 30px;
-    z-index: 9999;
-    font-family: "Poppins", sans-serif;
-    text-align: center;
-  }
-  .delete-popup button {
-    margin: 10px 8px 0 8px;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-  }
-  .delete-popup .confirm { background: #e74c3c; color: #fff; }
-  .delete-popup .cancel { background: #bdc3c7; color: #222; }
-</style>
+  <!-- ✅ Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="dashboard-container">
-  <aside class="sidebar">
-    <div class="logo">
-      <img src="../logo.png" alt="Logo" />
-      <h2>ASF</h2>
-    </div>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="../logo.png" alt="Logo" />
+        <h2>ASF</h2>
+      </div>
 
-    <nav>
-      <ul>
-        <li><a href="/dashboard/"><i class="fas fa-home"></i> Dashboard</a></li>
-        <li><a href="../collection/"><i class="fas fa-layer-group"></i> Collection</a></li>
-        <li><a href="/dashboard/link/" class="active"><i class="fas fa-link"></i> Links</a></li>
-        <li><a href="../user-management/"><i class="fas fa-users"></i> User Management</a></li>
-        <li><a href="/login/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-      </ul>
-    </nav>
-  </aside>
+      <nav>
+        <ul>
+          <li><a href="/dashboard/"><i class="fas fa-home"></i> Dashboard</a></li>
+          <li><a href="../collection/"><i class="fas fa-layer-group"></i> Collection</a></li>
+          <li><a href="/dashboard/link/" class="active"><i class="fas fa-link"></i> Links</a></li>
+          <li><a href="../user-management/"><i class="fas fa-users"></i> User Management</a></li>
+          <li><a href="/login/" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      </nav>
+    </aside>
 
-  <main class="main-content">
-    <h1>Manage Website Links</h1>
+    <main class="main-content">
+      <h1>Manage Website Links</h1>
 
-    <div class="add-link">
-      <input type="text" id="linkName" placeholder="Enter Link Name" />
-      <input type="text" id="linkURL" placeholder="Enter Link URL" />
-      <button id="addBtn">Add Link</button>
-    </div>
+      <div class="add-link">
+        <input type="text" id="linkName" placeholder="Enter Link Name" />
+        <input type="text" id="linkURL" placeholder="Enter Link URL" />
+        <button id="addBtn">Add Link</button>
+      </div>
 
-    <table id="linkTable">
-      <thead>
-        <tr>
-          <th>Link Name</th>
-          <th>URL</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </main>
-</div>
+      <table id="linkTable">
+        <thead>
+          <tr>
+            <th>Link Name</th>
+            <th>URL</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </main>
+  </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyArUMHWhrM-g0m0-kXTu_EWmGACetQvLlc",
-  authDomain: "asf-panel-sm.firebaseapp.com",
-  projectId: "asf-panel-sm",
-  storageBucket: "asf-panel-sm.firebasestorage.app",
-  messagingSenderId: "444535178333",
-  appId: "1:444535178333:web:da733a6f819a0c4529f9b4",
-  measurementId: "G-BSFWL4LLY5"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-const linkTableBody = document.querySelector("#linkTable tbody");
-const addBtn = document.getElementById("addBtn");
-const linkNameInput = document.getElementById("linkName");
-const linkURLInput = document.getElementById("linkURL");
-
-const linksRef = ref(db, "websiteLinks");
-
-// Load links
-onValue(linksRef, (snapshot) => {
-  const data = snapshot.val();
-  linkTableBody.innerHTML = "";
-  if (!data) return;
-
-  Object.keys(data).forEach(key => {
-    const link = data[key];
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${link.name}</td>
-      <td><a href="${link.url}" target="_blank">${link.url}</a></td>
-      <td>
-        <button class="deleteBtn" data-key="${key}">Delete</button>
-      </td>
-    `;
-    linkTableBody.appendChild(row);
-  });
-
-  // Add delete confirmation
-  document.querySelectorAll(".deleteBtn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      showDeletePopup(btn.dataset.key);
-    });
-  });
-});
-
-// Add link
-addBtn.addEventListener("click", () => {
-  const name = linkNameInput.value.trim();
-  const url = linkURLInput.value.trim();
-  if (!name || !url) return alert("Please enter both name and URL");
-
-  const newKey = Date.now().toString();
-  set(ref(db, `websiteLinks/${newKey}`), { name, url })
-    .then(() => {
-      linkNameInput.value = "";
-      linkURLInput.value = "";
-    });
-});
-
-// Delete confirmation popup
-function showDeletePopup(key){
-  const popup = document.createElement("div");
-  popup.className = "delete-popup";
-  popup.innerHTML = `
-    <p>Are you sure you want to delete this link?</p>
-    <button class="confirm">Yes, Delete</button>
-    <button class="cancel">Cancel</button>
-  `;
-  document.body.appendChild(popup);
-
-  popup.querySelector(".confirm").addEventListener("click", () => {
-    remove(ref(db, `websiteLinks/${key}`)).then(() => popup.remove());
-  });
-  popup.querySelector(".cancel").addEventListener("click", () => popup.remove());
-}
-</script>
+  <script type="module" src="link.js"></script>
 </body>
 </html>
-
