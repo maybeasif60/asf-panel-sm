@@ -17,7 +17,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// DOM Elements
+// DOM
 const linkNameInput = document.getElementById("linkName");
 const linkURLInput = document.getElementById("linkURL");
 const addBtn = document.getElementById("addBtn");
@@ -29,14 +29,48 @@ onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = "../login/login.html";
 });
 
+// Modern popup function
+function showPopup(message, type = "success") {
+  const popup = document.createElement("div");
+  popup.className = `popup-notification ${type}`;
+  popup.textContent = message;
+
+  Object.assign(popup.style, {
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    padding: "12px 20px",
+    backgroundColor: type === "success" ? "#4caf50" : "#f44336",
+    color: "#fff",
+    borderRadius: "8px",
+    boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+    zIndex: 9999,
+    fontFamily: "Poppins, sans-serif",
+    fontSize: "14px",
+    opacity: 0,
+    transition: "opacity 0.3s, transform 0.3s",
+  });
+
+  document.body.appendChild(popup);
+  setTimeout(() => {
+    popup.style.opacity = 1;
+    popup.style.transform = "translateY(0)";
+  }, 10);
+
+  setTimeout(() => {
+    popup.style.opacity = 0;
+    popup.style.transform = "translateY(-20px)";
+    setTimeout(() => popup.remove(), 300);
+  }, 2500);
+}
+
 // Add link
 addBtn.addEventListener("click", async () => {
   const name = linkNameInput.value.trim();
   let url = linkURLInput.value.trim();
 
-  if (!name || !url) return alert("Enter both name and URL");
+  if (!name || !url) return showPopup("Enter both name and URL", "error");
 
-  // Add https:// if missing
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     url = "https://" + url;
   }
@@ -44,9 +78,10 @@ addBtn.addEventListener("click", async () => {
   await push(ref(db, "links"), { name, url });
   linkNameInput.value = "";
   linkURLInput.value = "";
+  showPopup("Link added successfully!");
 });
 
-// Display links and delete with confirmation
+// Display links and delete
 onValue(ref(db, "links"), (snapshot) => {
   linkTable.innerHTML = "";
   snapshot.forEach((child) => {
@@ -67,12 +102,9 @@ onValue(ref(db, "links"), (snapshot) => {
       const id = btn.dataset.id;
       const confirmDelete = confirm("Are you sure you want to delete this link?");
       if (!confirmDelete) return;
-      try {
-        await remove(ref(db, `links/${id}`));
-        alert("Link deleted successfully");
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
+
+      await remove(ref(db, `links/${id}`));
+      showPopup("Link deleted successfully!", "success");
     };
   });
 });
