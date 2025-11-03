@@ -11,6 +11,7 @@
 
   <!-- ✅ Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -54,73 +55,6 @@
     </main>
   </div>
 
-  <!-- ✅ Embed Firebase JS & Add Delete Confirmation -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
-
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_BUCKET",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    const linkNameInput = document.getElementById("linkName");
-    const linkURLInput = document.getElementById("linkURL");
-    const addBtn = document.getElementById("addBtn");
-    const tableBody = document.querySelector("#linkTable tbody");
-
-    const linksRef = ref(db, "websiteLinks");
-
-    // Add new link
-    addBtn.addEventListener("click", () => {
-      const name = linkNameInput.value.trim();
-      const url = linkURLInput.value.trim();
-      if (!name || !url) return alert("Both fields are required!");
-
-      push(linksRef, { name, url })
-        .then(() => {
-          linkNameInput.value = "";
-          linkURLInput.value = "";
-        })
-        .catch(err => alert("Error: " + err.message));
-    });
-
-    // Render links
-    onValue(linksRef, (snapshot) => {
-      const data = snapshot.val();
-      tableBody.innerHTML = "";
-
-      if (!data) return;
-
-      Object.keys(data).forEach(key => {
-        const link = data[key];
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td>${link.name}</td>
-          <td><a href="${link.url}" target="_blank">${link.url}</a></td>
-          <td><button class="deleteBtn">Delete</button></td>
-        `;
-
-        // Delete with confirmation
-        tr.querySelector(".deleteBtn").addEventListener("click", () => {
-          if (confirm(`Are you sure you want to delete "${link.name}"?`)) {
-            remove(ref(db, `websiteLinks/${key}`))
-              .catch(err => alert("Error: " + err.message));
-          }
-        });
-
-        tableBody.appendChild(tr);
-      });
-    });
-  </script>
+  <script type="module" src="link.js"></script>
 </body>
 </html>
