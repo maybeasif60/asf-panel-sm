@@ -12,13 +12,12 @@ const firebaseConfig = {
   measurementId: "G-BSFWL4LLY5"
 };
 
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// DOM
+// DOM Elements
 const linkNameInput = document.getElementById("linkName");
 const linkURLInput = document.getElementById("linkURL");
 const addBtn = document.getElementById("addBtn");
@@ -30,7 +29,7 @@ onAuthStateChanged(auth, (user) => {
   if (!user) window.location.href = "../login/login.html";
 });
 
-// Add link (no UID/ref appended)
+// Add link
 addBtn.addEventListener("click", async () => {
   const name = linkNameInput.value.trim();
   let url = linkURLInput.value.trim();
@@ -47,7 +46,7 @@ addBtn.addEventListener("click", async () => {
   linkURLInput.value = "";
 });
 
-// Display links and delete
+// Display links and delete with confirmation
 onValue(ref(db, "links"), (snapshot) => {
   linkTable.innerHTML = "";
   snapshot.forEach((child) => {
@@ -62,11 +61,18 @@ onValue(ref(db, "links"), (snapshot) => {
     linkTable.appendChild(row);
   });
 
-  // Delete button
+  // Delete button with confirmation
   document.querySelectorAll(".delete").forEach(btn => {
     btn.onclick = async () => {
       const id = btn.dataset.id;
-      await remove(ref(db, `links/${id}`));
+      const confirmDelete = confirm("Are you sure you want to delete this link?");
+      if (!confirmDelete) return;
+      try {
+        await remove(ref(db, `links/${id}`));
+        alert("Link deleted successfully");
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
     };
   });
 });
